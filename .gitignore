@@ -2,6 +2,6 @@
 /build/*
 /dist/*
 *.egg-info
-/Pipfile.lock
+*.lock
 __pycache__
 *.spec
