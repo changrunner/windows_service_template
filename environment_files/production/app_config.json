@@ -1,0 +1,5 @@
+{
+  "APPLICATION_NAME": "windows_service_template",
+  "DEBUG_MODE": "False",
+  "ENVIRONMENT": "production"
+}

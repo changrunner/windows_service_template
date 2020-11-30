@@ -1,16 +1,17 @@
 from subprocess import Popen, PIPE
 import os
+import sys
 from shutil import copy, rmtree
 from zeppos_application.app_config import AppConfig
 from zeppos_root.root import Root
 from zeppos_logging.app_logger import AppLogger
 
 
-def copy_config_file(root_dir, service_name):
+def copy_config_file(root_dir, service_name, environment):
     AppLogger.logger.debug("=> Copy config.json files")
     base_directory = os.path.join(os.path.expanduser('~'), '.config')
     os.makedirs(base_directory, exist_ok=True)
-    source_file = os.path.join(root_dir, 'environment_files/local/config.json')
+    source_file = os.path.join(root_dir, f'environment_files/{environment}/windows_service_config.json')
     destination_file = os.path.join(base_directory, f"config_{service_name}.json")
     AppLogger.logger.debug(f"Copying [{source_file}] to [{destination_file}]")
     copy(source_file, destination_file)
@@ -66,17 +67,20 @@ def remove_previous_deploy_directories(root_dir):
 
 def build_windows_service(current_dir, service_name):
     AppLogger.logger.debug("====> Build the windows service")
-    p = Popen(['pipenv', 'run', 'pyinstaller', '-F', '--hidden-import=win32timezone', os.path.join(current_dir, service_name + '.py')], stdout=PIPE)
+    p = Popen(['pipenv', 'run', 'pyinstaller', '-F', '--hidden-import=win32timezone', os.path.join(current_dir, 'windows_service.py')], stdout=PIPE)
     p.communicate()
 
 
-def main():
+def main(args):
     AppLogger.logger.debug("==> ***** DEPLOY WINDOWS SERVICE - STARTED ***** <==")
 
     root_dir, current_dir = get_directories()
     service_name = get_config_values(root_dir)
 
-    copy_config_file(root_dir, service_name)
+    environment = 'local'
+    if len(args) == 2:
+        environment = args[1]
+    copy_config_file(root_dir, service_name, environment)
 
     remove_previous_deploy_directories(root_dir)
 
@@ -89,4 +93,4 @@ def main():
 if __name__ == '__main__':
     AppLogger.configure_and_get_logger('deploy')
     AppLogger.set_debug_level()
-    main()
+    main(sys.argv)
