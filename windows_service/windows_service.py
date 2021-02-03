@@ -14,7 +14,7 @@ import psutil
 
 class WindowsService(win32serviceutil.ServiceFramework):
     # *************** Only Change This ########################
-    # *** These values can not be gotten from config as the win32serviceutil.ServiceFramework expects them.
+    # *** These values CAN NOT be gotten from config as the win32serviceutil.ServiceFramework expects them.
     _svc_name_ = "zzz_windows_service_template"  # Change: Name
     _svc_display_name_ = "zzz Windows Service Template"  # Change: Description
     # *************** Only Change This ########################
@@ -41,11 +41,7 @@ class WindowsService(win32serviceutil.ServiceFramework):
 
     @staticmethod
     def get_configuration_values():
-        config_dict = \
-            AppConfig.get_json_config_dict(
-                current_module_filename=WindowsService.get_configuration_directory(),
-                config_file_name=WindowsService.get_configuration_file_name()
-            )
+        config_dict = WindowsService._get_config_dict()
         AppLogger.logger.debug(f"service_name: {config_dict['SERVICE_NAME']}")
         AppLogger.logger.debug(f"application_name: {config_dict['APPLICATION_NAME']}")
         AppLogger.logger.debug(f"app_to_start_cmd: {config_dict['APP_TO_START_CMD']}")
@@ -54,20 +50,26 @@ class WindowsService(win32serviceutil.ServiceFramework):
                config_dict['APP_TO_START_CMD'], config_dict['DEBUG_MODE']
 
     @staticmethod
-    def get_configuration_directory():
+    def _get_config_dict():
+        return AppConfig.get_json_config_dict(
+            current_module_filename=WindowsService._get_configuration_directory(),
+            config_file_name=WindowsService._get_configuration_file_name()
+        )
+
+    @staticmethod
+    def _get_configuration_directory():
         return os.path.join(
             os.path.expanduser('~'), '.config'
         )
 
     @staticmethod
-    def get_configuration_file_name():
+    def _get_configuration_file_name():
         return f"config_{WindowsService.get_service_name()}.json"
 
     @staticmethod
     def get_configuration_full_file_name():
-        return os.path.join(WindowsService.get_configuration_directory(),
-                            WindowsService.get_configuration_file_name())
-
+        return os.path.join(WindowsService._get_configuration_directory(),
+                            WindowsService._get_configuration_file_name())
 
     def SvcStop(self):
         AppLogger.logger.debug('Entering SvcStop')
@@ -95,8 +97,6 @@ class WindowsService(win32serviceutil.ServiceFramework):
             while rc != win32event.WAIT_OBJECT_0:
                 AppLogger.logger.debug(f"is_running: {WindowsService.is_running(self.application_name)}")
                 rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
-
-            # WindowsService.stop_the_process(self.application_name)
 
         except Exception as error_object:
             AppLogger.logger.error(f'Error in SvcStop: {error_object}')
@@ -168,7 +168,8 @@ class WindowsService(win32serviceutil.ServiceFramework):
                         proc_object = proc
 
                 if proc_object:
-                    AppLogger.logger.debug(f"Application | {application_name} | Proc found with status: {proc_object.status()}")
+                    AppLogger.logger.debug(
+                        f"Application | {application_name} | Proc found with status: {proc_object.status()}")
                     if proc.status().upper() == "RUNNING":
                         AppLogger.logger.debug("Exiting get_proc_object")
                         return proc_object
