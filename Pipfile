@@ -21,4 +21,4 @@ psutil = ">==5.7.3"
 zeppos-application = ">=0.0.5"
 
 [requires]
-python_version = "3.7"
+python_version = "3.8"
