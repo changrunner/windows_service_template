@@ -28,14 +28,16 @@ class WindowsService(win32serviceutil.ServiceFramework):
     @staticmethod
     def get_config_values():
         base_directory = os.path.join(os.path.expanduser('~'), '.config')
-        config_full_file_name = os.path.join(base_directory, f"config_{'simple_windows_service'}.json")
+        config_full_file_name = os.path.join(base_directory, f"config_{chang_me.service_name}.json")
+        AppLogger.logger.info(f"config_full_file_name: {config_full_file_name}")
         debug_mode = False
         if os.path.exists(config_full_file_name):
             with open(config_full_file_name, 'r') as fl:
                 config_values = loads(fl.read())
             if config_values and 'DEBUG_MODE' in config_values:
-                debug_mode = config_values['DEBUG_MODE']
+                debug_mode = str(config_values['DEBUG_MODE']).upper() == "TRUE"
         AppLogger.logger.info(f"Config Values: {config_values}")
+        AppLogger.logger.info(f"debug_mode: {debug_mode}")
         return debug_mode, f"{chang_me.service_name}_app", f"{chang_me.service_name}_app_start_me.bat"
 
     def __init__(self, args):
@@ -90,7 +92,9 @@ class WindowsService(win32serviceutil.ServiceFramework):
         AppLogger.logger.debug('Enter start_the_process')
         try:
             AppLogger.logger.debug(f'Starting: [{app_to_start_cmd}]')
+            AppLogger.logger.debug(f"debug_mode: {debug_mode}")
             if debug_mode:
+                AppLogger.logger.info("Logging to file: c:\\log\\{application_name}_log.txt")
                 os.makedirs(r"c:\log", exist_ok=True)
                 with open(f"c:\\log\\{application_name}_log.txt", 'w') as fl:
                     WindowsService.run_process(app_to_start_cmd, fl)

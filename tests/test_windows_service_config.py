@@ -8,7 +8,7 @@ class TestTheProjectMethods(unittest.TestCase):
             WindowsService.get_config_values()
         self.assertEqual("zzz_windows_service_template_app", application_name)
         self.assertEqual("zzz_windows_service_template_app_start_me.bat", app_to_start_cmd)
-        self.assertEqual('True', debug_mode)
+        self.assertEqual(True, debug_mode)
 
 
 if __name__ == '__main__':

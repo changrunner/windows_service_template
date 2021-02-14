@@ -13,7 +13,7 @@ class TestTheProjectMethods(unittest.TestCase):
         windows_service = WindowsService(None)
         self.assertEqual("zzz_windows_service_template_app", windows_service.application_name)
         self.assertEqual("zzz_windows_service_template_app_start_me.bat", windows_service.app_to_start_cmd)
-        self.assertEqual("True", windows_service.debug_mode)
+        self.assertEqual(True, windows_service.debug_mode)
 
     def test__pid_full_file_name_method(self):
         self.assertEqual(['.pidfile'],
