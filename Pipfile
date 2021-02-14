@@ -8,17 +8,15 @@ name = "test"
 url = "https://test.pypi.org/simple"
 verify_ssl = true
 
-[dev-packages]
+[packages]
+pyinstaller = ">=4.2"
+pywin32 = ">=300"
+zeppos-application = ">=0.0.8"
+psutil = ">=5.8.0"
 pytest = ">=6.1.2"
 testfixtures = ">=6.15.0"
-wheel = "*"
-setuptools = "*"
-pyinstaller = ">=4.1"
 
-[packages]
-pywin32 = ">=300"
-psutil = ">==5.7.3"
-zeppos-application = ">=0.0.5"
+[dev-packages]
 
 [requires]
 python_version = "3.8"

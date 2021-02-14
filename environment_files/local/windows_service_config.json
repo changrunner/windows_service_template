@@ -1,6 +1,0 @@
-{
-  "SERVICE_NAME": "zzz_windows_service_template",
-  "APPLICATION_NAME": "windows_service_template",
-  "APP_TO_START_CMD": "windows_service_template_start_me.bat",
-  "DEBUG_MODE": "True"
-}

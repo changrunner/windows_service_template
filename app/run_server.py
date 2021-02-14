@@ -3,6 +3,7 @@ import time
 from zeppos_logging.app_logger import AppLogger
 from run_app_base import RunAppBase
 
+
 class RunServer(RunAppBase):
     def __init__(self):
         super().__init__()
