@@ -5,13 +5,14 @@ import win32event
 import win32service
 import win32serviceutil
 from datetime import datetime
-from subprocess import Popen, PIPE, STDOUT, DEVNULL
+from subprocess import Popen, STDOUT, DEVNULL, PIPE
 from zeppos_logging.app_logger import AppLogger
 from zeppos_logging.app_logger_json_conifg_name import AppLoggerJsonConfigName
 import os
 from json import loads
 import psutil
 import chang_me
+from time import sleep
 
 
 class WindowsService(win32serviceutil.ServiceFramework):
@@ -42,11 +43,11 @@ class WindowsService(win32serviceutil.ServiceFramework):
 
     def __init__(self, args):
         AppLogger.logger.info("******* STARTING Windows Service Process")
-        AppLogger.logger.debug("Entering __init__")
+        AppLogger.logger.info("Entering __init__")
         try:
             self.debug_mode, self.application_name, self.app_to_start_cmd = \
                 WindowsService.get_config_values()
-            AppLogger.logger.debug(f"Args: {args}")
+            AppLogger.logger.info(f"Args: {args}")
             win32serviceutil.ServiceFramework.__init__(self, args)
             self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
             socket.setdefaulttimeout(60)
@@ -56,7 +57,7 @@ class WindowsService(win32serviceutil.ServiceFramework):
         AppLogger.logger.info("Exiting __init__")
 
     def SvcStop(self):
-        AppLogger.logger.debug('Entering SvcStop')
+        AppLogger.logger.info('Entering SvcStop')
 
         try:
             self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
@@ -67,15 +68,13 @@ class WindowsService(win32serviceutil.ServiceFramework):
         except Exception as error_object:
             AppLogger.logger.error(f'Error in SvcStop: {error_object}')
 
-        AppLogger.logger.debug('Exiting SvcStop')
+        AppLogger.logger.info('Exiting SvcStop')
 
     def SvcDoRun(self):
-        AppLogger.logger.debug('Entering SvcDoRun')
+        AppLogger.logger.info('Entering SvcDoRun')
 
         try:
-            self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
-            WindowsService.start_the_process(self.debug_mode, self.app_to_start_cmd, self.application_name)
-            self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+            self.start_the_process(self.debug_mode, self.app_to_start_cmd, self.application_name)
 
             rc = None
             while rc != win32event.WAIT_OBJECT_0:
@@ -85,24 +84,34 @@ class WindowsService(win32serviceutil.ServiceFramework):
         except Exception as error_object:
             AppLogger.logger.error(f'Error in SvcStop: {error_object}')
 
-        AppLogger.logger.debug('Exit SvcDoRun')
+        AppLogger.logger.info('Exit SvcDoRun')
 
-    @staticmethod
-    def start_the_process(debug_mode, app_to_start_cmd, application_name):
-        AppLogger.logger.debug('Enter start_the_process')
+    def start_the_process(self, debug_mode, app_to_start_cmd, application_name):
+        AppLogger.logger.info('Enter start_the_process')
         try:
-            AppLogger.logger.debug(f'Starting: [{app_to_start_cmd}]')
-            AppLogger.logger.debug(f"debug_mode: {debug_mode}")
+            AppLogger.logger.info(f'Starting: [{app_to_start_cmd}]')
+            self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
+            AppLogger.logger.info(f"debug_mode: {debug_mode}")
             if debug_mode:
-                AppLogger.logger.info("Logging to file: c:\\log\\{application_name}_log.txt")
+                AppLogger.logger.info(f"Logging to file: c:\\log\\{application_name}_log.txt")
                 os.makedirs(r"c:\log", exist_ok=True)
                 with open(f"c:\\log\\{application_name}_log.txt", 'w') as fl:
-                    WindowsService.run_process(app_to_start_cmd, fl)
+                    Popen([app_to_start_cmd], stdout=fl, stderr=STDOUT, stdin=DEVNULL, shell=False)
+                self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+                AppLogger.logger.info(f'App started | {application_name} | [{app_to_start_cmd}]')
             else:
-                WindowsService.run_process(app_to_start_cmd, STDOUT)
-            AppLogger.logger.info(f'App started| {application_name} | [{app_to_start_cmd}]')
+                AppLogger.logger.info("run the process")
+                p = Popen([app_to_start_cmd], stdout=PIPE, stderr=PIPE, stdin=DEVNULL, shell=False)
+                AppLogger.logger.info(f'App started | {application_name} | [{app_to_start_cmd}]')
+                self.ReportServiceStatus(win32service.SERVICE_RUNNING)
+                sleep(5)
+                AppLogger.logger.debug(f"is_running: {WindowsService.is_running(self.application_name)}")
+                AppLogger.logger.info(f"This processes is going to wait here until done. 'p.communicate()'")
+                p.communicate()
+                AppLogger.logger.info(f"The processes completed.")
         except Exception as err:
             AppLogger.logger.error(f'Error starting process: [{err}]')
+
         AppLogger.logger.debug('Exit start_the_process')
 
     @staticmethod
@@ -119,10 +128,6 @@ class WindowsService(win32serviceutil.ServiceFramework):
         pid_full_file_name = os.path.join(pid_file_directory, pid_file_name)
         AppLogger.logger.debug(f'pid_full_file_name | {pid_full_file_name}')
         return pid_full_file_name
-
-    @staticmethod
-    def run_process(app_to_start_cmd, stdout):
-        Popen([app_to_start_cmd], stdout=stdout, stderr=STDOUT, stdin=DEVNULL, shell=False)
 
     @staticmethod
     def kill_app(application_name):
